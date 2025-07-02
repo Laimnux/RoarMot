@@ -105,7 +105,7 @@
                           group-hover:opacity-10 transition-opacity duration-500"></span>
             </a>
 
-            <a href="Registro.html" class="bg-red-600 hover:bg-[#fd8c00] text-white 
+            <a href="<?php echo base_url('RegistroPasoOne');?>" class="bg-red-600 hover:bg-[#fd8c00] text-white 
                   px-4 py-2 rounded-lg 
                   font-bold tracking-wide
                   transition-all duration-150 
@@ -145,7 +145,7 @@
               Controla y gestiona tu moto de forma remota en tu dispositivo movil descargando nuestra app.
             </p>
 
-            <a href="Registro.html" class="inline-block 
+            <a href="<?php echo base_url('RegistroPasoOne');?>" class="inline-block 
                   text-3xl md:text-4xl font-bebas 
                   px-12 md:px-16 py-4 md:py-6 
                   bg-red-600 hover:bg-[#fd8c00] mt-4

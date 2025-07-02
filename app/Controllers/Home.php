@@ -17,5 +17,11 @@ class Home extends BaseController
     {
         return view('iniciarSesion');
     }
+
+    // iniciar la vista registro paso 1
+
+    public function registroPaso1(){
+        return view('RegistroPasoOne');
+    }
     
 }
