@@ -50,7 +50,7 @@
     <main class="flex-1 p-10 overflow-auto relative">
         <!-- ✅ Bienvenida superpuesta -->
         <div class="absolute top-4 right-6 text-sm bg-white px-4 py-2 rounded shadow border border-gray-200 z-10">
-            Bienvenido, <span class="font-semibold text-pink-600"><?= htmlspecialchars($nombreUsuario ?? 'Usuario') ?></span>
+            Bienvenido, <span class="font-semibold text-pink-600"><?= esc($NOMBRE_USUARIO ?? 'Usuario') ?></span>
         </div>
 
         <!-- Renderiza el contenido específico de la vista que extiende este layout -->

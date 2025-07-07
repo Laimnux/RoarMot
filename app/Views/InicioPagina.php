@@ -73,16 +73,16 @@
         
         <!-- Menú central - Ajusta los enlaces según necesites -->
         <nav class="hidden md:flex space-x-8">
-          <a href="#" class="text-sm hover:text-red-400 transition-colors font-medium
+          <a href="#Tienda" class="text-sm hover:text-red-400 transition-colors font-medium
           flex items-center justify-center h-full px-3 py-2
           border-b-2 border-transparent hover:border-orange-400">Tienda</a>
-          <a href="#" class="text-sm hover:text-red-400 transition-colors font-medium
+          <a href="#CDA" class="text-sm hover:text-red-400 transition-colors font-medium
           flex items-center justify-center h-full px-3 py-2
           border-b-2 border-transparent hover:border-orange-400">CDA</a>
-          <a href="#" class="text-sm hover:text-red-400 transition-colors font-medium
+          <a href="#Alerta" class="text-sm hover:text-red-400 transition-colors font-medium
           flex items-center justify-center h-full px-3 py-2
           border-b-2 border-transparent hover:border-orange-400">Alertas</a>
-          <a href="#" class="text-sm hover:text-red-400 transition-colors font-medium
+          <a href="#sos" class="text-sm hover:text-red-400 transition-colors font-medium
           flex items-center justify-center h-full px-3 py-2
           border-b-2 border-transparent hover:border-orange-400">SOS</a>
         </nav>
@@ -196,8 +196,8 @@
   </section>
 
 
-<!-- ===== SECCIÓN APP CENTRADA ===== -->
-<section class="py-20 bg-gray-50">
+<!-- ===== SECCIÓN APP CENTRADA Descarga nuestra app ===== -->
+<section id= "DescargarApp" class="py-20 bg-gray-50">
   <div class="container mx-auto px-4">
     <div class="max-w-6xl mx-auto bg-gray-900 rounded-xl shadow-2xl"> 
       <div class="flex flex-col lg:flex-row">
@@ -303,7 +303,7 @@
   </section>
 
 <!-- ===== SECCIÓN TIENDA (FONDO CLARO) ===== -->
-<section class="py-20 bg-gray-50">
+<section id="Tienda" class="py-20 bg-gray-50">
   <div class="container mx-auto px-4">
     <div class="max-w-6xl mx-auto xl:max-w-7xl">
       
@@ -329,7 +329,7 @@
         
         <div class="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200">
           <div class="relative h-60 overflow-hidden group">
-            <img src="public/images/assets/casco 3.jpeg" alt="Casco" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            <img src="<?php echo base_url('public/images/assets/casco 3.jpeg');?>" alt="Casco" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
             <span class="absolute top-4 right-4 bg-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">NUEVO</span>
           </div>
           <div class="p-6">
@@ -349,7 +349,7 @@
 
         <div class="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200">
           <div class="relative h-60 overflow-hidden group">
-            <img src="public/images/assets/guantes.jpg" alt="Guantes" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            <img src="<?php echo base_url('public/images/assets/guantes.jpg');?>" alt="Guantes" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
             <span class="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">-25%</span>
           </div>
           <div class="p-6">
@@ -369,7 +369,7 @@
 
         <div class="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200">
           <div class="relative h-60 overflow-hidden group">
-            <img src="public/images/assets/chaqueta.jpeg" alt="Chaqueta" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            <img src="<?php echo base_url('public/images/assets/chaqueta.jpeg');?>" alt="Chaqueta" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
           </div>
           <div class="p-6">
             <h3 class="text-xl font-bold text-gray-900">Chaqueta Stormguard</h3>
@@ -408,7 +408,7 @@
   </section>
 
 <!-- ===== SECCIÓN CDA ===== -->
-<section class="py-20 bg-gray-50">
+<section id="CDA" class="py-20 bg-gray-50">
   <div class="container mx-auto px-4">
     <!-- Contenedor principal centrado -->
     <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
@@ -549,7 +549,7 @@
 
 
 <!-- ===== SECCIÓN ALERTAS ===== -->
-<section class="py-20 bg-gray-50">
+<section id="Alerta" class="py-20 bg-gray-50">
   <div class="container mx-auto px-4">
     <!-- Contenedor principal centrado -->
     <div class="max-w-6xl mx-auto">
@@ -681,8 +681,8 @@
   </div>
 </section>
 
-
-<section class="bg-gray-50 py-12 px-6 md:px-12" id="sos">
+<!-- Sos -->
+<section id="sos" class="bg-gray-50 py-12 px-6 md:px-12" id="sos">
   <div class="max-w-4xl mx-auto text-center">
     <h2 class="text-3xl font-bold text-red-600 mb-4">🚨 Sección SOS</h2>
     <p class="text-gray-700 mb-6">

@@ -82,7 +82,8 @@ $routes->group('panel', function($routes) {
     // Ruta para vista EditProdut
     $routes->get('editarProduct', 'DashboardControllerVen::editProduct');
     // ---  RUTAS POST PARA PROCESAR EDICIÓN Y ELIMINACIÓN ---
-    $routes->post('editProductProcess', 'DashboardControllerVen::editProductProcess'); 
+    $routes->post('editProductProceso', 'DashboardControllerVen::editProductProcess'); 
+    $routes->post('deleteProductProceso', 'DashboardControllerVen::deleteProductProcess'); 
 
     //$routes->get('edit-product', 'SellerDashboardController::editProduct');
     //$routes->get('orders', 'SellerDashboardController::orders');
