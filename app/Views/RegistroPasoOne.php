@@ -24,11 +24,14 @@
             backface-visibility: hidden;
             perspective: 1000px;
         }
+
         /* Estilos personalizados para el estado seleccionado */
-        [selected] {
-            background-color: #fd8c00 !important;
-            color: white !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        /* Mantén tus estilos base para .btn-rol (los que ya tienes) */
+        /* Y para el estado activo, usa esta clase: */
+        .btn-rol.active-role { /* Puedes usar 'active-role' o 'selected-role' o lo que prefieras */
+            background-color: #fd8c00; /* Tu color naranja */
+            color: white;             /* Texto blanco */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Puedes añadir una sombra si quieres */
         }
         /* Garantiza que el focus naranja tenga prioridad */
         .peer:focus {
@@ -65,7 +68,7 @@
             <div class="bg-white p-10 rounded-xl shadow-sm">
                 <h1 class="font-bebas text-4xl text-gray-800 text-center mb-2">REGÍSTRATE Y EMPIEZA</h1>
 
-                <form class="mt-8 space-y-6" id="formularioPaso1" action="<?= base_url('registro/paso1') ?>" method="POST">
+                <form class="mt-8 space-y-6" id="formularioPaso1" action="<?= base_url('registro/procesarPaso1') ?>" method="POST">
 
                     <div class="relative mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona tu perfil</label>
@@ -74,12 +77,8 @@
                             <button
                                 type="button"
                                 id="motero-btn"
-                                class="flex-1 py-3 px-4 text-center transition-all duration-300
-                                       font-medium rounded-md
-                                       bg-white text-gray-800
-                                       hover:bg-gray-50 hover:shadow-sm"
-                                onclick="selectRole('comprador')"
-                                <?php if (old('rol') === 'comprador' || old('rol') === null): ?> selected="true" class="!bg-[#fd8c00] !text-white" <?php endif; ?>
+                                class="flex-1 py-3 px-4 text-center transition-all duration-300 font-medium rounded-md bg-white text-gray-800 hover:bg-gray-50 hover:shadow-sm
+                                <?php if (old('rol') === 'comprador'): ?> !bg-[#fd8c00] !text-white <?php endif; ?>"
                             >
                                 Motero
                             </button>
@@ -89,23 +88,20 @@
                             <button
                                 type="button"
                                 id="proveedor-btn"
-                                class="flex-1 py-3 px-4 text-center transition-all duration-300
-                                       font-medium rounded-md
-                                       bg-white text-gray-800
-                                       hover:bg-gray-50 hover:shadow-sm"
-                                onclick="selectRole('vendedor')"
-                                <?php if (old('rol') === 'vendedor'): ?> selected="true" class="!bg-[#fd8c00] !text-white" <?php endif; ?>
+                                class="flex-1 py-3 px-4 text-center transition-all duration-300 font-medium rounded-md bg-white text-gray-800 hover:bg-gray-50 hover:shadow-sm
+                                <?php if (old('rol') === 'vendedor'): ?> !bg-[#fd8c00] !text-white <?php endif; ?>"
                             >
                                 Vendedor
                             </button>
                         </div>
+                        <input type="hidden" id="rol" name="rol" value="<?= old('rol') ?>">
 
-                        <input type="hidden" id="rol" name="rol" value="<?= old('rol') ?? 'comprador' ?>">
                         <div id="error-rol-server" class="error-message
                             <?php if (!isset($validation) || !$validation->hasError('rol')): ?> hidden <?php endif; ?>">
                             <?= (isset($validation) && $validation->hasError('rol')) ? $validation->getError('rol') : '' ?>
                         </div>
-                        <div id="error-rol-client" class="error-message hidden"></div> </div>
+                        <div id="error-rol-client" class="error-message hidden"></div>
+                    </div>
 
                     <div class="relative mb-6">
                         <input
@@ -144,10 +140,8 @@
 
                     <button type="submit"
                             id="continueButton"
-                            class="w-full bg-red-600 hover:bg-[#fd8c00] text-white
-                                   py-4 px-6 rounded-md font-bebas text-2xl
-                                   transition-all duration-300 transform hover:scale-[1.02]
-                                   shadow-lg hover:shadow-xl mt-6">
+                            class="w-full py-3 px-4 rounded-md text-white font-semibold text-lg transition-all duration-300
+                                    bg-gray-400 cursor-not-allowed opacity-50">
                         Continuar
                     </button>
 
@@ -194,7 +188,9 @@
     </div>
 
     <script>
+        // Espera a que el DOM esté completamente cargado
         document.addEventListener('DOMContentLoaded', function() {
+            // Obtener referencias a elementos del DOM
             const rolInput = document.getElementById('rol');
             const moteroBtn = document.getElementById('motero-btn');
             const proveedorBtn = document.getElementById('proveedor-btn');
@@ -202,134 +198,182 @@
             const continueButton = document.getElementById('continueButton');
             const form = document.getElementById('formularioPaso1');
 
+             // AÑADE ESTO: Variable para controlar si un rol ya fue seleccionado por el usuario
+            let roleManuallySelected = false;
+
             // Función para mostrar mensajes flash de CodeIgniter
             function showAlert(message, type) {
-                const alertaDiv = document.getElementById('flash-' + type); // Usamos los IDs que ya tenemos
+                const alertaDiv = document.getElementById('flash-' + type);
                 if (alertaDiv) {
-                    alertaDiv.classList.remove('hidden');
+                    alertaDiv.classList.remove('hidden'); // Muestra el mensaje
+                    // Oculta el mensaje después de 3 segundos
                     setTimeout(() => {
                         alertaDiv.classList.add('hidden');
-                        alertaDiv.remove(); // Opcional: Eliminar el elemento después de mostrar
+                        alertaDiv.remove();
                     }, 3000);
                 }
             }
 
-            // Llamar a showAlert para los mensajes flash existentes
+            // Mostrar mensajes flash de PHP si existen
             <?php if (session()->getFlashdata('success')): ?>
                 showAlert('<?= session()->getFlashdata('success') ?>', 'success');
             <?php elseif (session()->getFlashdata('error')): ?>
                 showAlert('<?= session()->getFlashdata('error') ?>', 'error');
             <?php endif; ?>
 
-            // *** FUNCIONES JS ORIGINALES, ADAPTADAS ***
+            // Función para seleccionar el rol (comprador/vendedor)
             function selectRole(role) {
+                // Obtener elementos relacionados con la selección de rol
                 const moteroImage = document.getElementById('dynamic-image');
                 const proveedorImage = document.getElementById('proveedor-image');
                 const moteroOptions = document.getElementById('motero-options');
                 const proveedorOptions = document.getElementById('proveedor-options');
 
-                rolInput.value = role; // Actualiza el input oculto
+                rolInput.value = role; // Establecer el valor del input oculto
 
-                // Resetear y aplicar estilos a los botones
-                moteroBtn.classList.remove('!bg-[#fd8c00]', '!text-white');
-                proveedorBtn.classList.remove('!bg-[#fd8c00]', '!text-white');
+                // Resetear estilos de los botones
+                // Resetear estilos de los botones
+                moteroBtn.classList.remove('!bg-[#fd8c00]', '!text-white'); // Asegúrate que estas líneas estén presentes
+                proveedorBtn.classList.remove('!bg-[#fd8c00]', '!text-white'); // Asegúrate que estas líneas estén presentes
+                
                 moteroBtn.removeAttribute('selected');
                 proveedorBtn.removeAttribute('selected');
 
                 if (role === 'comprador') {
+                    // Configuración para rol comprador
                     moteroBtn.classList.add('!bg-[#fd8c00]', '!text-white');
                     moteroBtn.setAttribute('selected', 'true');
+                    // Mostrar imagen de motero y ocultar proveedor
                     moteroImage.classList.remove('opacity-0');
                     moteroImage.classList.add('left-[-15%]');
                     proveedorImage.classList.add('opacity-0');
                     proveedorImage.classList.remove('right-[-40%]');
+                    // Mostrar opciones específicas para motero
                     moteroOptions.classList.remove('hidden');
                     proveedorOptions.classList.add('hidden');
                 } else { // 'vendedor'
+                    // Configuración para rol vendedor
                     proveedorBtn.classList.add('!bg-[#fd8c00]', '!text-white');
                     proveedorBtn.setAttribute('selected', 'true');
+                    // Mostrar imagen de proveedor y ocultar motero
                     moteroImage.classList.add('opacity-0');
                     moteroImage.classList.remove('left-[-15%]');
                     proveedorImage.classList.remove('opacity-0');
                     proveedorImage.classList.add('right-[-40%]');
+                    // Mostrar opciones específicas para proveedor
                     moteroOptions.classList.add('hidden');
                     proveedorOptions.classList.remove('hidden');
                 }
-                validateForm(); // Re-validar al cambiar el rol
+                validateForm(); // Validar el formulario completo
+                roleManuallySelected = true; // El usuario ha seleccionado un rol
             }
 
+            // Función para validar el campo de email
             function validateEmailInput() {
                 const errorElement = document.getElementById('error-email-client');
                 const emailValue = emailInput.value.trim();
                 const isValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
 
+                // Resetear clases de estilo
                 emailInput.classList.remove('shake', 'border-red-500', 'border-green-500', 'border-gray-300');
                 errorElement.classList.add('hidden');
 
                 if (emailValue === '') {
+                    // Estado vacío
                     emailInput.classList.add('border-gray-300');
-                    // Restablecer label a estado inicial si input está vacío
+                    // Ajustar estilos del label flotante
                     emailInput.previousElementSibling.classList.remove('!text-red-500', '!text-green-600', 'top-[-0.5rem]', 'text-xs');
                     emailInput.previousElementSibling.classList.add('text-gray-500', 'top-[1.1rem]', 'text-base');
                 } else if (!isValidFormat) {
+                    // Email inválido
                     emailInput.classList.add('border-red-500', 'shake');
                     errorElement.textContent = 'Ingresa un email válido (ejemplo@dominio.com).';
                     errorElement.classList.remove('hidden');
-                    emailInput.previousElementSibling.classList.add('!text-red-500'); // Label también en rojo
+                    // Ajustar estilos del label flotante
+                    emailInput.previousElementSibling.classList.add('!text-red-500');
                     emailInput.previousElementSibling.classList.remove('text-gray-500', 'top-[1.1rem]', 'text-base');
                     emailInput.previousElementSibling.classList.add('top-[-0.5rem]', 'text-xs');
                 } else {
-                    emailInput.classList.add('border-green-500'); // Opcional: borde verde cuando es válido
+                    // Email válido
+                    emailInput.classList.add('border-green-500');
+                    // Ajustar estilos del label flotante
                     emailInput.previousElementSibling.classList.remove('!text-red-500', 'text-gray-500');
                     emailInput.previousElementSibling.classList.add('!text-green-600', 'top-[-0.5rem]', 'text-xs');
                 }
-                validateForm();
+                validateForm(); // Validar el formulario completo
             }
 
+            // Función para validar todo el formulario
             function validateForm() {
+                // Verificar si el email es válido
                 const isEmailValid = emailInput.value.trim() !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value);
-                const isRolSelected = rolInput.value !== ''; // Siempre tendrá un valor por defecto
+                // Verificar si se seleccionó un rol (siempre tendrá valor por defecto)
+                const isRolSelected = rolInput.value !== '';
 
-                if (isEmailValid && isRolSelected) {
-                    continueButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                // Habilitar/deshabilitar botón de continuar según validación
+                 if (isEmailValid == true && isRolSelected) { // Si emali ambos son valido, el botón se habilita
+                    continueButton.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-red-600');
+                    continueButton.classList.add('bg-red-600', 'hover:bg-[#fd8c00]', 'cursor-pointer');
                     continueButton.disabled = false;
-                } else {
-                    continueButton.classList.add('opacity-50', 'cursor-not-allowed');
+                } else { // Si no, el botón se deshabilita
+                    continueButton.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+                    continueButton.classList.remove('bg-[#fd8c00]', 'hover:bg-[#e67e00]', 'cursor-pointer');
                     continueButton.disabled = true;
                 }
             }
 
-            // Event Listeners
-            emailInput.addEventListener('input', validateEmailInput);
-            emailInput.addEventListener('blur', validateEmailInput); // Re-validar al salir del campo
+            // Event Listeners para los botones de selección de rol
+            moteroBtn.addEventListener('click', function() {
+                selectRole('comprador');
+            });
+
+            proveedorBtn.addEventListener('click', function() {
+                selectRole('vendedor');
+            });
+
+            // Event Listeners para el campo de email
+            emailInput.addEventListener('input', validateEmailInput); // Al escribir
+            emailInput.addEventListener('blur', validateEmailInput);  // Al perder foco
             emailInput.addEventListener('focus', function() {
+                // Estilos cuando el campo recibe foco
                 emailInput.classList.remove('shake', 'border-red-500', 'border-green-500', 'border-gray-300');
                 emailInput.classList.add('border-[#fd8c00]');
+                // Ajustar estilos del label flotante
                 emailInput.previousElementSibling.classList.remove('!text-red-500', 'text-gray-500', '!text-green-600', 'top-[1.1rem]', 'text-base');
                 emailInput.previousElementSibling.classList.add('text-[#fd8c00]', 'top-[-0.5rem]', 'text-xs');
                 document.getElementById('error-email-client').classList.add('hidden');
             });
 
+            // MODIFICA ESTE BLOQUE: Inicialización al cargar la página
+            // Esto se ejecutará SÓLO si hay un old('rol') del servidor (por ejemplo, después de una validación fallida)
+            if (rolInput.value) { // Si hay un old('rol')
+                selectRole(rolInput.value); // Seleccionar el rol que vino del old()
+            } else {
+                // Asegúrate de que el campo oculto 'rol' esté vacío o sin valor inicial
+                // y que no se establezca ninguna clase 'active' en los botones al cargar.
+                // Aquí no llamamos a selectRole(), lo que los deja en su estado neutral.
+                rolInput.value = ''; // Asegurar que el input hidden no tenga valor por defecto si no hay old()
+            }
 
-            // Manejo del envío del formulario (para la carga y deshabilitación)
+            // Manejo del envío del formulario
             form.addEventListener('submit', function(event) {
-                // Ejecutar validación final antes de enviar
-                validateEmailInput(); // Asegura que las validaciones cliente se ejecuten
-                
-                // Si el botón está deshabilitado por JS, prevenimos el envío
+                validateEmailInput(); // Validar email antes de enviar
+
+                // Prevenir envío si el formulario no es válido
                 if (continueButton.disabled) {
                     event.preventDefault();
-                    // Asegúrate de que los mensajes de error del cliente sean visibles si la validación falla
+                    // Mostrar errores específicos si existen
                     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim())) {
                         document.getElementById('error-email-client').classList.remove('hidden');
                     }
-                    if (!rolInput.value) { // Aunque rol siempre tendrá valor, por si acaso
-                         document.getElementById('error-rol-client').classList.remove('hidden');
-                         document.getElementById('error-rol-client').textContent = 'Selecciona un rol';
+                    if (!rolInput.value) {
+                        document.getElementById('error-rol-client').classList.remove('hidden');
+                        document.getElementById('error-rol-client').textContent = 'Selecciona un rol';
                     }
-                    return; // Detiene el envío
+                    return;
                 }
 
+                // Cambiar el botón a estado de "cargando"
                 const textoOriginal = continueButton.textContent;
                 continueButton.innerHTML = `
                     <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -339,21 +383,12 @@
                     Enviando...
                 `;
                 continueButton.disabled = true;
-
-                // ELIMINAMOS la redirección setTimeout del JavaScript,
-                // ahora el servidor (CodeIgniter) se encargará de la redirección.
-                // try {
-                //   await new Promise(resolve => setTimeout(resolve, 1500));
-                //   // No hay redirección JS aquí, el form se envía al action
-                // } catch (error) {
-                //   // ... (manejo de errores de simulación, ya no es necesario si el servidor responde)
-                // }
             });
 
             // Inicialización al cargar la página
-            selectRole(rolInput.value || 'comprador'); // Asegura que el botón correcto esté seleccionado inicialmente
-            validateEmailInput(); // Validar estado inicial del email (si viene de old())
-            validateForm(); // Habilitar/deshabilitar botón al inicio
+            selectRole(rolInput.value || 'comprador'); // Establecer rol predeterminado
+            validateEmailInput(); // Validar campo email inicial
+            validateForm();      // Validar formulario completo inicialmente
         });
     </script>
 </body>

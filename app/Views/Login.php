@@ -32,20 +32,14 @@
     </style>
 </head>
 <body class="bg-cream min-h-screen flex relative">
+    <!-- Un solo div para mostrar las alertas, gestionado por JavaScript -->
     <div id="alerta-servidor" class="hidden fixed top-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-semibold text-center max-w-md w-full">
         <span id="mensaje-alerta-servidor"></span>
     </div>
 
-    <?php if (session()->getFlashdata('success')): ?>
-        <div id="flash-success" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-semibold text-center max-w-md w-full bg-green-600">
-            <?= session()->getFlashdata('success') ?>
-        </div>
-    <?php elseif (session()->getFlashdata('error')): ?>
-        <div id="flash-error" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-semibold text-center max-w-md w-full bg-red-600">
-            <?= session()->getFlashdata('error') ?>
-        </div>
-    <?php endif; ?>
-
+    <!-- Los divs flash-success y flash-error de PHP ya no son necesarios aquí,
+         porque el JS los va a leer y mostrar en alerta-servidor.
+         Los he eliminado para evitar duplicidad y simplificar. -->
 
     <div class="hidden lg:block w-1/2 relative overflow-hidden">
         <div class="absolute inset-0 flex items-center justify-center">
@@ -67,7 +61,7 @@
             <div class="bg-white p-10 rounded-xl shadow-sm">
                 <h1 class="font-bebas text-4xl text-gray-800 text-center mb-2">INICIA SESIÓN</h1>
 
-                <form class="mt-8 space-y-6" id="loginForm" action="<?= base_url('auth/loginProcess') ?>" method="POST">
+                <form class="mt-8 space-y-6" id="loginForm" action="<?= base_url('procesoLogin') ?>" method="POST">
                     <div class="relative">
                         <input
                             type="email"
@@ -94,7 +88,7 @@
                             Correo electrónico
                         </label>
                         <div class="error-message mt-1 text-red-500 text-xs
-                             <?php if (!isset($validation) || !$validation->hasError('email')): ?> hidden <?php endif; ?>">
+                                   <?php if (!isset($validation) || !$validation->hasError('email')): ?> hidden <?php endif; ?>">
                             <?= (isset($validation) && $validation->hasError('email')) ? $validation->getError('email') : '' ?>
                         </div>
                     </div>
@@ -124,7 +118,7 @@
                             Contraseña
                         </label>
                         <div class="error-message mt-1 text-red-500 text-xs
-                             <?php if (!isset($validation) || !$validation->hasError('contrasena')): ?> hidden <?php endif; ?>">
+                                   <?php if (!isset($validation) || !$validation->hasError('contrasena')): ?> hidden <?php endif; ?>">
                             <?= (isset($validation) && $validation->hasError('contrasena')) ? $validation->getError('contrasena') : '' ?>
                         </div>
                     </div>
@@ -184,7 +178,7 @@
         function showAlert(message, type) {
             const alertaDiv = document.getElementById('alerta-servidor');
             const mensajeSpan = document.getElementById('mensaje-alerta-servidor');
-            alertaDiv.classList.remove('hidden', 'bg-green-600', 'bg-red-600');
+            alertaDiv.classList.remove('hidden', 'bg-green-600', 'bg-red-600', 'bg-gray-700'); // Limpiar todas las clases de color
             
             mensajeSpan.textContent = message;
             if (type === 'success') {
@@ -202,17 +196,17 @@
         }
 
         // Cargar y mostrar mensajes flash existentes al cargar la página
-        const flashSuccess = document.getElementById('flash-success');
-        if (flashSuccess) {
-            showAlert(flashSuccess.textContent.trim(), 'success');
-            flashSuccess.remove(); // Eliminar el div para evitar duplicados visuales
-        }
-        const flashError = document.getElementById('flash-error');
-        if (flashError) {
-            showAlert(flashError.textContent.trim(), 'error');
-            flashError.remove(); // Eliminar el div
-        }
-
+        // --- CAMBIO CLAVE AQUÍ: Leer 'success_message' y 'error_message' ---
+        <?php if (session()->getFlashdata('success_message')): ?>
+            showAlert('<?= esc(session()->getFlashdata('success_message')) ?>', 'success');
+        <?php elseif (session()->getFlashdata('error_message')): ?>
+            showAlert('<?= esc(session()->getFlashdata('error_message')) ?>', 'error');
+        <?php elseif (isset($validation) && $validation->getErrors()): ?>
+            // Si hay errores de validación, mostrar el primer error
+            <?php $firstError = array_values($validation->getErrors())[0]; ?>
+            showAlert('<?= esc($firstError) ?>', 'error');
+        <?php endif; ?>
+        // --- FIN CAMBIO CLAVE ---
 
         function updateLoginButtonState() {
             const isEmailValid = emailInput.checkValidity() && emailInput.value.trim() !== '';
@@ -329,9 +323,6 @@
                 });
                 return;
             }
-            // Aquí el formulario se enviará al servidor a la acción definida en <form action="...">
-            // Por lo tanto, el setTimeout y la redirección JS ya no son necesarios
-            // setTimeout(() => { window.location.href = 'dashboard.html'; }, 2000); // ELIMINAR ESTO
         });
 
         updateLoginButtonState();

@@ -34,7 +34,7 @@ class UsuarioModel extends Model
     // ¡Es CRÍTICO incluir solo los campos que quieres permitir desde el formulario!
     protected $allowedFields = [
         'CORREO_USUARIO',
-        'CONTRASEÑA', // Aquí guardaremos la contraseña hasheada
+        'CONTRASENA', // Aquí guardaremos la contraseña hasheada
         'NOMBRE_USUARIO',
         'APELLIDO_USUARIO',
         'TEL_USUARIO',
@@ -42,20 +42,22 @@ class UsuarioModel extends Model
         'TIPO_DOCUMENTO', // Estos dos son NULLABLE ahora, por lo que no es obligatorio que lleguen
         'NUMERO_USUARIO', // Pero los incluimos porque pueden ser llenados más tarde
         'ESTADO_USUARIO', // Tiene un DEFAULT 'Activo', pero lo podemos incluir si queremos setearlo explícitamente
+        'NOMBRE_EMPRESA', 
+        'FECHA_CREACION',
     ];
 
     // Si true, el modelo intentará manejar automáticamente los timestamps (fechas de creación/actualización).
     // Necesita columnas 'created_at' y 'updated_at' en la tabla.
     // En tu caso tienes 'FECHA_CREACION', pero CI espera 'created_at' por defecto.
     // Podemos configurarlo manualmente para 'FECHA_CREACION'.
-    protected $useTimestamps = true; // Habilitamos los timestamps
-    protected $dateFormat    = 'datetime'; // Formato de fecha para la base de datos
+    protected $useTimestamps = false; // Habilitamos los timestamps
+    //protected $dateFormat    = 'datetime'; // Formato de fecha para la base de datos
 
     // Nombres de las columnas de fecha y hora para creación y actualización.
     // Si tu columna es diferente a 'created_at', la defines aquí.
-    protected $createdField  = 'FECHA_CREACION';
-    protected $updatedField  = null; // No tienes una columna 'updated_at' en tu tabla actual
-    protected $deletedField  = 'deleted_at'; // Si usaras soft deletes
+    //protected $createdField  = 'FECHA_CREACION';
+    //protected $updatedField  = null; // No tienes una columna 'updated_at' en tu tabla actual
+    //protected $deletedField  = 'deleted_at'; // Si usaras soft deletes
 
     // Reglas de validación para los campos antes de insertar/actualizar.
     // Opcional, se puede hacer en el controlador también.
@@ -81,8 +83,8 @@ class UsuarioModel extends Model
     protected function hashPassword(array $data)
     {
         // Solo hashear si la contraseña está presente en los datos
-        if (isset($data['data']['CONTRASEÑA'])) {
-            $data['data']['CONTRASEÑA'] = password_hash($data['data']['CONTRASEÑA'], PASSWORD_DEFAULT);
+        if (isset($data['data']['CONTRASENA'])) {
+            $data['data']['CONTRASENA'] = password_hash($data['data']['CONTRASENA'], PASSWORD_DEFAULT);
         }
 
         return $data;

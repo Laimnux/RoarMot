@@ -1,140 +1,201 @@
 <?php
 
-/**
- * Este controlador AuthController manejará toda la lógica de los pasos de registro 
- * (Validaciones, guardar detos)
- */
-
+// En este controller AuthController maneja la autenticación (registro, inicio y cierre de sesión)
 namespace App\Controllers;
 
-use App\Models\UsuarioModel; // Importa tu modelo de usuario
+use App\Models\UsuarioModel;
 use CodeIgniter\Controller;
+use CodeIgniter\HTTP\CLIRequest;
+use CodeIgniter\HTTP\IncomingRequest;
+use CodeIgniter\HTTP\RequestInterface;
+use CodeIgniter\HTTP\ResponseInterface;
+use Psr\Log\LoggerInterface;
 
-class AuthController extends Controller
+
+class AuthController extends BaseController
 {
-    // Propiedad para almacenar el modelo de usuario
     protected $usuarioModel;
+    protected $request;
+    protected $session;
 
-    // Constructor para inicializar el modelo
-    public function __construct()
+    public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger)
     {
+        parent::initController($request, $response, $logger);
         $this->usuarioModel = new UsuarioModel();
+        helper(['form', 'url']);
+        $this->session = \Config\Services::session();
     }
 
-    // Método para mostrar el Paso 1 del registro (ingreso de correo)
-    public function registerStep1()
+    public function registroPaso1()
     {
-        // Carga la vista del Paso 1
-        return view('registro');
+        $data = [];
+        if ($this->session->getFlashdata('validation')) {
+            $data['validation'] = $this->session->getFlashdata('validation');
+        }
+        return view('RegistroPasoOne', $data);
     }
 
-    // Método para manejar la validación del correo y pasar al Paso 2
-    public function registerProcessStep1()
+    public function procesarPaso1()
     {
         $rules = [
-            'email' => 'required|valid_email|is_unique[usuario.CORREO_USUARIO]',
+            'email' => 'required|valid_email|is_unique[USUARIO.CORREO_USUARIO]',
+            'rol'   => 'required|in_list[comprador,vendedor]',
         ];
-
         $messages = [
             'email' => [
                 'required'    => 'El correo electrónico es obligatorio.',
-                'valid_email' => 'Por favor, ingresa un correo electrónico válido.',
-                'is_unique'   => 'Este correo electrónico ya está registrado. Por favor, inicia sesión o usa otro correo.',
+                'valid_email' => 'Por favor, ingresa un formato de correo electrónico válido.',
+                'is_unique'   => 'Este correo electrónico ya está registrado.'
             ],
-        ];
-
-        if (!$this->validate($rules, $messages)) {
-            // Si la validación falla, redirige de nuevo al Paso 1 con los errores
-            return view('registro', [
-                'validation' => $this->validator,
-                'oldInput'   => $this->request->getPost(), // Mantener los datos ingresados
-            ]);
-        }
-
-        // Si el correo es válido y único, pasamos al Paso 2
-        // Puedes pasar el correo en la sesión o en la URL (query string)
-        $email = $this->request->getPost('email');
-        
-        // Redirige al Paso 2, pasando el email como parámetro en la URL
-        // o si prefieres, puedes usar la sesión para datos sensibles.
-        return redirect()->to(base_url('registro-paso2') . '?email=' . urlencode($email));
-    }
-
-    // Método para mostrar el Paso 2 del registro (selección de rol)
-    public function registerStep2()
-    {
-        // Obtiene el email de la URL (o sesión)
-        $email = $this->request->getGet('email'); 
-
-        // Puedes añadir una validación aquí para asegurar que el email existe en la sesión/URL y es válido
-        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return redirect()->to(base_url('registro'))->with('error', 'Falta el correo electrónico para el registro.');
-        }
-
-        return view('registro-paso2', ['email' => $email]);
-    }
-
-    // Método para manejar la selección de rol y pasar al Paso 3
-    public function registerProcessStep2()
-    {
-        $rules = [
-            'email' => 'required|valid_email', // Revalidar el email por seguridad
-            'rol'   => 'required|in_list[comprador,vendedor]', // Asegura que el rol es válido
-        ];
-
-        $messages = [
             'rol' => [
-                'required'  => 'Debes seleccionar un rol (comprador o vendedor).',
-                'in_list'   => 'El rol seleccionado no es válido.',
-            ],
+                'required' => 'Debes seleccionar un rol.',
+                'in_list'  => 'El rol seleccionado no es válido.'
+            ]
         ];
 
         if (!$this->validate($rules, $messages)) {
-            // Si la validación falla, redirige de nuevo al Paso 2 con los errores
-            // Aquí hay que tener cuidado de no perder el email
-            $email = $this->request->getPost('email');
-            return view('registro-paso2', [
-                'validation' => $this->validator,
-                'email'      => $email,
-                'oldInput'   => $this->request->getPost(),
-            ]);
+            $this->session->setFlashdata('validation', $this->validator);
+            return redirect()->back()->withInput();
         }
 
         $email = $this->request->getPost('email');
         $rol   = $this->request->getPost('rol');
 
-        // Redirige al Paso 3, pasando el email y el rol
-        return redirect()->to(base_url('registro-paso3') . '?email=' . urlencode($email) . '&rol=' . urlencode($rol));
+        $codigoVerificacion = mt_rand(100000, 999999);
+        $this->session->setFlashdata('codigo_verificacion', $codigoVerificacion);
+        
+        $this->session->set('email_registro_persistente', $email); 
+        $this->session->set('rol_registro_persistente', $rol);    
+
+        log_message('debug', 'Código de verificación generado para ' . $email . ': ' . $codigoVerificacion);
+
+        return redirect()->to(base_url('registro/paso2'));
     }
 
-
-    // Método para mostrar el Paso 3 del registro (datos personales y contraseña)
-    public function registerStep3()
+    public function registroPaso2()
     {
-        // Obtiene el email y el rol de la URL (o sesión)
-        $email = $this->request->getGet('email');
-        $rol   = $this->request->getGet('rol');
+        $email = $this->session->get('email_registro_persistente');
+        $rol   = $this->session->get('rol_registro_persistente');
 
-        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL) || empty($rol)) {
-            return redirect()->to(base_url('registro'))->with('error', 'Falta información para completar el registro.');
+        if (empty($email) || empty($rol)) {
+            return redirect()->to(base_url('registro/paso1'))
+                             ->with('error_message', 'Acceso no autorizado al Paso 2. Por favor, comienza desde el Paso 1.');
+        }
+
+        $this->session->setFlashdata('codigo_verificacion', $this->session->getFlashdata('codigo_verificacion'));
+
+        $data = [
+            'email' => $email,
+            'rol'   => $rol,
+            'validation' => $this->session->getFlashdata('validation') ?? null
+        ];
+
+        return view('RegistroPasoTwo', $data);
+    }
+
+    public function validarCodigo()
+    {
+        $codigoIngresado = $this->request->getPost('codigo');
+        $codigoCorrecto  = $this->session->getFlashdata('codigo_verificacion');
+        
+        $email           = $this->session->get('email_registro_persistente');
+        $rol             = $this->session->get('rol_registro_persistente');
+
+        $this->session->setFlashdata('codigo_verificacion', $codigoCorrecto); 
+
+        $rules = [
+            'codigo' => [
+                'rules' => 'required|exact_length[6]|is_natural_no_zero',
+                'errors' => [
+                    'required'            => 'El código es obligatorio.',
+                    'exact_length'        => 'El código debe tener exactamente 6 dígitos.',
+                    'is_natural_no_zero' => 'El código debe contener solo números.'
+                ]
+            ]
+        ];
+
+        if (!$this->validate($rules)) {
+            $this->session->setFlashdata('validation', $this->validator);
+            return redirect()->back()->withInput()
+                             ->with('error_message', 'Por favor, corrige los errores en el código.');
+        }
+
+        if ($codigoIngresado === (string)$codigoCorrecto) {
+            return redirect()->to(base_url('registro/paso3'))
+                             ->with('success_message', 'Código validado correctamente. Por favor, completa tu registro.');
+        } else {
+            return redirect()->back()
+                             ->withInput()
+                             ->with('error_message', 'El código ingresado es incorrecto. Por favor, intenta nuevamente.');
+        }
+    }
+
+    public function reenviarCodigo()
+    {
+        if (!$this->request->isAJAX() || !$this->request->is('post')) {
+            return $this->response->setStatusCode(405)->setJSON(['success' => false, 'message' => 'Método no permitido.']);
+        }
+
+        $input = $this->request->getJSON(true);
+        $email = $input['email'] ?? null;
+
+        if (empty($email)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Email no proporcionado para reenviar.']);
+        }
+
+        $rol = $this->session->get('rol_registro_persistente'); 
+
+        $nuevoCodigo = mt_rand(100000, 999999);
+        $this->session->setFlashdata('codigo_verificacion', $nuevoCodigo);
+
+        log_message('debug', 'Nuevo código de verificación reenviado para ' . $email . ': ' . $nuevoCodigo);
+
+        return $this->response->setJSON(['success' => true, 'message' => 'Nuevo código enviado con éxito.']);
+    }
+
+    public function registroPaso3()
+    {
+        $email = $this->session->get('email_registro_persistente');
+        $rol   = $this->session->get('rol_registro_persistente');
+
+        if (empty($email) || empty($rol)) {
+            return redirect()->to(base_url('registro/paso1'))
+                             ->with('error_message', 'Acceso no autorizado al Paso 3. Por favor, comienza desde el Paso 1.');
         }
         
-        return view('registro-paso3', ['email' => $email, 'rol' => $rol]);
+        $data = [
+            'email' => $email,
+            'rol'   => $rol,
+            'validation' => $this->session->getFlashdata('validation') ?? null
+        ];
+
+        return view('RegistroPasoTres', $data);
     }
 
-    // Método para manejar el envío del formulario del Paso 3 y guardar en la BD
-    public function completeRegistration()
+    public function completeRegistro()
     {
+        $email = $this->session->get('email_registro_persistente');
+        $rol   = $this->session->get('rol_registro_persistente');
+
+        if (empty($email) || empty($rol)) {
+            return redirect()->to(base_url('registro/paso1'))
+                             ->with('error_message', 'Error: Datos de registro incompletos. Por favor, comienza desde el Paso 1.');
+        }
+
         $rules = [
-            'nombre'         => 'required|alpha_space|max_length[45]',
-            'apellido'       => 'required|alpha_space|max_length[45]',
-            'telefono'       => 'required|numeric|exact_length[10]', // Asumiendo 10 dígitos
-            'contrasena'     => 'required|min_length[8]',
-            'confirm_contrasena' => 'required_with[contrasena]|matches[contrasena]', // Para confirmar contraseña
-            'email'          => 'required|valid_email', // Revalidar siempre el email por seguridad
-            'rol'            => 'required|in_list[comprador,vendedor]', // Revalidar el rol
-            'terminos'       => 'required', // Campo para aceptar términos
+            'nombre'             => 'required|alpha_space|max_length[45]',
+            'apellido'           => 'required|alpha_space|max_length[45]',
+            'telefono'           => 'required|numeric|exact_length[10]',
+            'password'           => 'required|min_length[8]',
+            'confirm_password'   => 'required_with[password]|matches[password]',
+            'email'              => 'required|valid_email',
+            'rol'                => 'required|in_list[comprador,vendedor]',
+            'terminos'           => 'required',
         ];
+
+        if ($rol === 'vendedor') {
+            $rules['nombre_empresa'] = 'required|alpha_numeric_space|max_length[100]';
+        }
 
         $messages = [
             'nombre' => [
@@ -152,11 +213,11 @@ class AuthController extends Controller
                 'numeric'      => 'El teléfono solo puede contener números.',
                 'exact_length' => 'El teléfono debe tener exactamente 10 dígitos.',
             ],
-            'contrasena' => [
-                'required'   => 'La contraseña es obligatoria.',
-                'min_length' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password' => [
+                'required'    => 'La contraseña es obligatoria.',
+                'min_length'  => 'La contraseña debe tener al menos 8 caracteres.',
             ],
-            'confirm_contrasena' => [
+            'confirm_password' => [
                 'required_with' => 'Debes confirmar la contraseña.',
                 'matches'       => 'Las contraseñas no coinciden.',
             ],
@@ -165,70 +226,73 @@ class AuthController extends Controller
                 'valid_email' => 'Por favor, ingresa un correo electrónico válido.',
             ],
             'rol' => [
-                'required'  => 'El rol es obligatorio.',
-                'in_list'   => 'El rol seleccionado no es válido.',
+                'required' => 'El rol es obligatorio.',
+                'in_list'  => 'El rol seleccionado no es válido.',
             ],
             'terminos' => [
                 'required' => 'Debes aceptar los términos y condiciones.',
             ],
+            'nombre_empresa' => [
+                'required'            => 'El nombre de la empresa es obligatorio para vendedores.',
+                'alpha_numeric_space' => 'El nombre de la empresa solo puede contener letras, números y espacios.',
+                'max_length'          => 'El nombre de la empresa no puede exceder los 100 caracteres.',
+            ],
         ];
 
         if (!$this->validate($rules, $messages)) {
-            // Si la validación falla, redirige de nuevo al Paso 3 con los errores
-            $email = $this->request->getPost('email');
-            $rol = $this->request->getPost('rol');
-            return view('registro-paso3', [
-                'validation' => $this->validator,
-                'email'      => $email,
-                'rol'        => $rol,
-                'oldInput'   => $this->request->getPost(),
-            ]);
+            $this->session->setFlashdata('validation', $this->validator);
+            return redirect()->back()->withInput();
         }
 
-        // Mapear el rol de texto a ID si tu tabla ROL_ID_ROL espera un INT
-        // Suponiendo: comprador = 1, vendedor = 2.
         $rolMapping = [
-            'comprador' => 1, 
+            'comprador' => 1,
             'vendedor'  => 2
         ];
-        $rolId = $rolMapping[$this->request->getPost('rol')];
+        $rolId = $rolMapping[$rol];
 
-
-        // Preparar los datos para insertar en la base de datos
-        $data = [
-            'CORREO_USUARIO'   => $this->request->getPost('email'),
-            'CONTRASEÑA'       => $this->request->getPost('contrasena'), // El modelo lo hasheará
+        $userDataToInsert = [
+            'CORREO_USUARIO'   => $email,
+            'CONTRASENA'       => $this->request->getPost('password'),
             'NOMBRE_USUARIO'   => $this->request->getPost('nombre'),
             'APELLIDO_USUARIO' => $this->request->getPost('apellido'),
             'TEL_USUARIO'      => $this->request->getPost('telefono'),
-            'ROL_ID_ROL'       => $rolId, // Usamos el ID mapeado
-            'ESTADO_USUARIO'   => 'Activo', // Valor por defecto
-            // TIPO_DOCUMENTO y NUMERO_USUARIO se insertarán como NULL porque son NULLABLE ahora y no los pedimos.
-            // FECHA_CREACION se auto-llenará por la DB.
+            'ROL_ID_ROL'       => $rolId,
+            'ESTADO_USUARIO'   => 'Activo',
+            'FECHA_CREACION'   => date('Y-m-d H:i:s'), // --- CAMBIO CLAVE: Añadir FECHA_CREACION manualmente ---
         ];
+        
+        if ($rol === 'vendedor') {
+            $userDataToInsert['NOMBRE_EMPRESA'] = $this->request->getPost('nombre_empresa');
+        }
 
-        // Intentar guardar el usuario
-        if ($this->usuarioModel->insert($data)) {
-            // Registro exitoso, redirigir al dashboard o página de éxito
-            return redirect()->to(base_url('dashboard'))->with('success', '¡Registro completado con éxito! Ahora puedes iniciar sesión.');
+        // --- ELIMINAR LÍNEA DE DEPURACIÓN dd($sql); ---
+        // La línea dd($sql); ya no es necesaria aquí y causaría que la inserción no se ejecute.
+
+        if ($this->usuarioModel->insert($userDataToInsert)) {
+            $this->session->remove('email_registro_persistente');
+            $this->session->remove('rol_registro_persistente');
+            $this->session->remove('codigo_verificacion'); 
+
+            return redirect()->to(base_url('iniciarSesion'))->with('success_message', '¡Registro completado con éxito! Ahora puedes iniciar sesión.');
         } else {
-            // Error al guardar, redirigir de nuevo al Paso 3 con un mensaje de error
-            return redirect()->to(base_url('registro-paso3') . '?email=' . urlencode($this->request->getPost('email')) . '&rol=' . urlencode($this->request->getPost('rol')))->with('error', 'Hubo un error al registrar el usuario. Por favor, inténtalo de nuevo.');
+            // Si falla la inserción en la DB, mostrar errores detallados
+            log_message('error', 'Error al insertar usuario en completeRegistro: ' . json_encode($this->usuarioModel->errors()));
+            log_message('error', 'Error de DB: ' . json_encode($this->usuarioModel->db()->error()));
+            // Aquí puedes descomentar dd($this->usuarioModel->db()->getLastQuery()); si aún necesitas ver la consulta en caso de fallo.
+            return redirect()->back()->withInput()->with('error_message', 'Hubo un error al completar tu registro. Por favor, inténtalo de nuevo.');
         }
     }
 
-    //método para mostrar la vista de inicio de sesión
     public function login()
     {
-        return view('inicioSesion'); // Asegúrate que 'inicioSesion' sea el nombre correcto de tu vista .php
+        return view('Login');
     }
 
-    // Nuevo método para procesar el intento de inicio de sesión
     public function loginProcess()
     {
         $rules = [
             'email' => 'required|valid_email',
-            'contrasena' => 'required|min_length[8]', // Asegúrate que 'contrasena' coincida con el atributo 'name' del input
+            'contrasena' => 'required|min_length[8]',
         ];
 
         $messages = [
@@ -237,58 +301,54 @@ class AuthController extends Controller
                 'valid_email' => 'Por favor, ingresa un correo electrónico válido.',
             ],
             'contrasena' => [
-                'required'   => 'La contraseña es obligatoria.',
-                'min_length' => 'La contraseña debe tener al menos 8 caracteres.',
+                'required'    => 'La contraseña es obligatoria.',
+                'min_length'  => 'La contraseña debe tener al menos 8 caracteres.',
             ],
         ];
 
         if (!$this->validate($rules, $messages)) {
-            // Si la validación falla, redirige de nuevo a la vista de login con los errores
             return redirect()->back()->withInput()->with('validation', $this->validator);
         }
 
         $email = $this->request->getPost('email');
         $password = $this->request->getPost('contrasena');
 
-        // Buscar al usuario por email en la base de datos
         $user = $this->usuarioModel->where('CORREO_USUARIO', $email)->first();
 
         if ($user) {
-            // Verificar la contraseña hasheada
-            if (password_verify($password, $user['CONTRASEÑA'])) {
-                // Contraseña correcta, iniciar sesión
-                $session = session();
+            if (password_verify($password, $user['CONTRASENA'])) {
+                //dd($user); // <--- AÑADE ESTA LÍNEA AQUÍ hacemos debug para verificar los datos que estamos enviando de la base  de datos 
                 $sessionData = [
                     'ID_USUARIO'   => $user['ID_USUARIO'],
                     'NOMBRE_USUARIO' => $user['NOMBRE_USUARIO'],
                     'EMAIL_USUARIO'  => $user['CORREO_USUARIO'],
-                    'ROL_ID_ROL'   => $user['ROL_ID_ROL'], // Guarda el rol
+                    'ROL_ID_ROL'   => $user['ROL_ID_ROL'],
                     'isLoggedIn'     => true,
                 ];
-                $session->set($sessionData);
+                $this->session->set($sessionData);
 
-                // Redirigir al dashboard o a la página de inicio
-                return redirect()->to(base_url('dashboard'))->with('success', '¡Has iniciado sesión con éxito!');
+                // --- CAMBIO CLAVE AQUÍ: Redirección condicional por rol ---
+                if ($user['ROL_ID_ROL'] == 1) { // Rol de Motero/Comprador
+                    return redirect()->to(base_url('DashBoard/dashboard'))->with('success_message', '¡Has iniciado sesión como Motero!');
+                } elseif ($user['ROL_ID_ROL'] == 2) { // Rol de Vendedor
+                    return redirect()->to(base_url('dashBoardVendedor'))->with('success_message', '¡Has iniciado sesión como Vendedor!');
+                } else {
+                    // Rol desconocido, redirigir a un lugar por defecto o mostrar error
+                    return redirect()->to(base_url('login'))->with('error_message', 'Rol de usuario desconocido. Por favor, contacta al soporte.');
+                }
+                // --- FIN CAMBIO CLAVE ---
 
             } else {
-                // Contraseña incorrecta
-                return redirect()->back()->withInput()->with('error', 'Correo electrónico o contraseña incorrectos.');
+                return redirect()->back()->withInput()->with('error_message', 'Correo electrónico o contraseña incorrectos.');
             }
         } else {
-            // Usuario no encontrado
-            return redirect()->back()->withInput()->with('error', 'Correo electrónico o contraseña incorrectos.');
+            return redirect()->back()->withInput()->with('error_message', 'Correo electrónico o contraseña incorrectos.');
         }
     }
 
-    // Método para cerrar sesión
     public function logout()
     {
-        $session = session();
-        $session->destroy(); // Elimina todos los datos de la sesión
-        return redirect()->to(base_url('iniciarSesion'))->with('success', 'Has cerrado sesión.');
+        $this->session->destroy();
+        return redirect()->to(base_url('/inicioPagina'))->with('success_message', 'Has cerrado sesión.');
     }
-
-    // Otros métodos de autenticación (login, logout) irán aquí más adelante
-
-
 }
