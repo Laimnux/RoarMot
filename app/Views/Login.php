@@ -33,35 +33,36 @@
 </head>
 <body class="bg-cream min-h-screen flex relative">
     <!-- Un solo div para mostrar las alertas, gestionado por JavaScript -->
-    <div id="alerta-servidor" class="hidden fixed top-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-semibold text-center max-w-md w-full">
+    <div id="alerta-servidor" class="hidden fixed top-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-semibold text-center max-w-md w-11/12 sm:w-full">
         <span id="mensaje-alerta-servidor"></span>
     </div>
 
-    <!-- Los divs flash-success y flash-error de PHP ya no son necesarios aquí,
-         porque el JS los va a leer y mostrar en alerta-servidor.
-         Los he eliminado para evitar duplicidad y simplificar. -->
-
+    <!-- Sección de la imagen (oculta en pantallas pequeñas) -->
     <div class="hidden lg:block w-1/2 relative overflow-hidden">
         <div class="absolute inset-0 flex items-center justify-center">
             <img src="<?= base_url('public/images/assets/imgRegistro.jpg') ?>" alt="Moto MYMOTO"
-                 class="h-full w-full object-[1%_40%] object-cover">
+                 class="h-full w-full object-cover object-[1%_40%]"> <!-- Ajustado object-position para mejor responsividad -->
         </div>
     </div>
 
-    <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
+    <!-- Contenedor principal del formulario de login -->
+    <!-- En pantallas pequeñas, ocupa todo el ancho; en lg, la mitad -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 md:p-12">
         <div class="max-w-md w-full">
 
-            <div class="bg-white p-4 rounded-xl shadow-sm mb-10">
+            <!-- Contenedor de logos -->
+            <div class="bg-white p-4 rounded-xl shadow-sm mb-8 sm:mb-10">
                 <div class="flex items-center justify-center space-x-1">
-                    <img src="<?= base_url('public/images/assets/Logo-RoarMot-Negro.png') ?>" alt="Logo MYMOTO" class="h-16 w-auto object-contain">
-                    <img src="<?= base_url('public/images/assets/tipografia-roarmot-negro.png') ?>" alt="Texto MYMOTO" class="h-10 w-auto object-contain">
+                    <img src="<?= base_url('public/images/assets/Logo-RoarMot-Negro.png') ?>" alt="Logo MYMOTO" class="h-14 sm:h-16 w-auto object-contain">
+                    <img src="<?= base_url('public/images/assets/tipografia-roarmot-negro.png') ?>" alt="Texto MYMOTO" class="h-8 sm:h-10 w-auto object-contain">
                 </div>
             </div>
 
-            <div class="bg-white p-10 rounded-xl shadow-sm">
-                <h1 class="font-bebas text-4xl text-gray-800 text-center mb-2">INICIA SESIÓN</h1>
+            <!-- Contenedor del formulario -->
+            <div class="bg-white p-6 sm:p-8 md:p-10 rounded-xl shadow-sm">
+                <h1 class="font-bebas text-3xl sm:text-4xl text-gray-800 text-center mb-2">INICIA SESIÓN</h1>
 
-                <form class="mt-8 space-y-6" id="loginForm" action="<?= base_url('procesoLogin') ?>" method="POST">
+                <form class="mt-6 space-y-5 sm:space-y-6" id="loginForm" action="<?= base_url('procesoLogin') ?>" method="POST">
                     <div class="relative">
                         <input
                             type="email"
@@ -71,7 +72,7 @@
                             placeholder=" "
                             pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
                             data-error-msg="Por favor, ingresa un correo electrónico válido (ejemplo@dominio.com)"
-                            value="<?= old('email') ?>" class="form-input peer w-full px-4 pt-4 pb-4 border rounded-md
+                            value="<?= old('email') ?>" class="form-input peer w-full px-4 pt-4 pb-2 border rounded-md
                                    border-gray-300 bg-white focus:outline-none focus:border-[#fd8c00] placeholder-transparent
                                    transition-colors duration-200
                                    <?php if (isset($validation) && $validation->hasError('email')): ?> border-red-500 shake <?php endif; ?>"
@@ -101,7 +102,7 @@
                             placeholder=" "
                             minlength="8"
                             data-error-msg="La contraseña debe tener al menos 8 caracteres."
-                            class="form-input peer w-full px-4 pt-4 pb-4 border rounded-md
+                            class="form-input peer w-full px-4 pt-4 pb-2 border rounded-md
                                    border-gray-300 bg-white focus:outline-none focus:border-[#fd8c00] placeholder-transparent
                                    transition-colors duration-200
                                    <?php if (isset($validation) && $validation->hasError('contrasena')): ?> border-red-500 shake <?php endif; ?>"
@@ -117,6 +118,8 @@
                                    <?php if (isset($validation) && $validation->hasError('contrasena')): ?> text-red-500 <?php endif; ?>" >
                             Contraseña
                         </label>
+
+                        
                         <div class="error-message mt-1 text-red-500 text-xs
                                    <?php if (!isset($validation) || !$validation->hasError('contrasena')): ?> hidden <?php endif; ?>">
                             <?= (isset($validation) && $validation->hasError('contrasena')) ? $validation->getError('contrasena') : '' ?>
@@ -127,40 +130,46 @@
                             id="loginButton"
                             class="w-full bg-gray-400 text-white
                                    opacity-50 cursor-not-allowed
-                                   py-4 px-6 rounded-md font-bebas text-2xl
+                                   py-3 sm:py-4 px-6 rounded-md font-bebas text-xl sm:text-2xl
                                    transition-all duration-300 transform shadow-lg">
                         INGRESAR
                     </button>
                 </form>
 
-                <div class="relative flex items-center py-6">
+                <div class="relative flex items-center py-5 sm:py-2">
                     <div class="flex-grow border-t border-gray-200"></div>
-                    <span class="flex-shrink mx-4 font-bebas text-gray-400">O</span>
+                    <span class="flex-shrink mx-3 sm:mx-4 font-bebas text-gray-400 text-lg sm:text-xl">O</span>
                     <div class="flex-grow border-t border-gray-200"></div>
                 </div>
 
+                <p class="text-gray-600 text-sm">
+                    <a href="<?= base_url('iniciarSesion') ?>" class="text-[#fd8c00] hover:underline">Contraseña olvidada?</a>
+                </p>
+
+
                 <div class="text-center">
-                    <p class="font-bebas text-xl text-gray-600">¿No tienes cuenta?</p>
+                    <p class="font-bebas text-lg sm:text-xl text-gray-600 sm:py-2">¿No tienes cuenta?</p>
                     <a href="<?= base_url('registro') ?>"
-                       class="inline-block font-bebas text-xl text-red-600 hover:text-[#fd8c00] mt-2
+                       class="inline-block font-bebas text-lg sm:text-xl text-red-600 hover:text-[#fd8c00] mt-1
                               transition-colors duration-300">
                         Crear Cuenta
                     </a>
                 </div>
             </div>
 
-            <div class="mt-12 text-center">
+            <!-- Sección inferior con "MOTERO AYUDA MOTERO" y idioma -->
+            <div class="mt-8 sm:mt-12 text-center">
                 <p class="mt-4 text-xl italic font-bold text-transparent bg-clip-text
                 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600
-                relative inline-block group cursor-pointer mx-auto text-center">
+                relative inline-block group cursor-pointer mx-auto text-center text-xl sm:text-2xl">
                 "MOTERO AYUDA MOTERO"
                 <span class="absolute left-0 bottom-0 h-[3px] w-0 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600
-                              transition-all duration-500 ease-out group-hover:w-full">
+                                  transition-all duration-500 ease-out group-hover:w-full">
                 </span>
                 </p>
 
-                <div class="mt-12 text-center">
-                    <p class="text-sm text-gray-500">Español - Latinoamérica</p>
+                <div class="mt-8 sm:mt-12 text-center">
+                    <p class="text-xs sm:text-sm text-gray-500">Español - Latinoamérica</p>
                 </div>
             </div>
         </div>
@@ -196,7 +205,6 @@
         }
 
         // Cargar y mostrar mensajes flash existentes al cargar la página
-        // --- CAMBIO CLAVE AQUÍ: Leer 'success_message' y 'error_message' ---
         <?php if (session()->getFlashdata('success_message')): ?>
             showAlert('<?= esc(session()->getFlashdata('success_message')) ?>', 'success');
         <?php elseif (session()->getFlashdata('error_message')): ?>
@@ -206,7 +214,6 @@
             <?php $firstError = array_values($validation->getErrors())[0]; ?>
             showAlert('<?= esc($firstError) ?>', 'error');
         <?php endif; ?>
-        // --- FIN CAMBIO CLAVE ---
 
         function updateLoginButtonState() {
             const isEmailValid = emailInput.checkValidity() && emailInput.value.trim() !== '';

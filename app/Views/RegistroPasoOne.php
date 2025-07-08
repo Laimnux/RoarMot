@@ -153,7 +153,7 @@
 
                     <div id="motero-options" class="mt-6 text-center space-y-4">
                         <a href="#" class="flex items-center justify-center border border-gray-300 rounded-md py-3 px-4 hover:bg-gray-50 transition">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+                            <img src="<?= base_url('public/images/assets/googleIcono.png') ?>"
                                  alt="Google" class="h-5 w-5 mr-2">
                             <span class="text-gray-700 font-medium">Iniciar sesión con Google</span>
                         </a>

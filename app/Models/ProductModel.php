@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 namespace App\Models;
 
@@ -7,7 +7,7 @@ use CodeIgniter\Model;
 class ProductModel extends Model
 {
     // Nombre de la tabla en la base de datos
-    protected $table = 'PRODUCTO'; 
+    protected $table = 'producto'; 
 
     // Clave primaria de la tabla
     protected $primaryKey = 'ID'; 
@@ -22,6 +22,7 @@ class ProductModel extends Model
     protected $useSoftDeletes = false; 
 
     // Nombres de las columnas que se pueden llenar masivamente (desde el formulario)
+    // Asegúrate de que estos nombres coincidan EXACTAMENTE con las columnas de tu DB
     protected $allowedFields = [
         'NOMBRE', 
         'DESCRIPCION', 
@@ -39,18 +40,19 @@ class ProductModel extends Model
     // Si se deben agregar automáticamente las marcas de tiempo de creación y actualización
     protected $useTimestamps = false; // Tu tabla no tiene FECHA_CREACION/ACTUALIZACION para productos
 
-    // Reglas de validación para la inserción/actualización de datos
+    // Reglas de validación para la inserción/actualización de datos en el MODELO.
+    // Estas deben ser consistentes con las del controlador y la DB.
     protected $validationRules = [
-        'NOMBRE'       => 'required|max_length[45]',
+        'NOMBRE'       => 'required|max_length[45]', // Coincide con el controlador y DB
         'DESCRIPCION'  => 'permit_empty', // La descripción puede estar vacía
-        'MARCA'        => 'required|max_length[15]',
-        // 'IMAGEN' se valida en el controlador porque es un archivo
+        'MARCA'        => 'required|max_length[15]', // Coincide con controlador y DB
+        'IMAGEN'       => 'permit_empty|max_length[1000]', // <-- AJUSTADO: max_length para el nombre de archivo/ruta. 
         'TALLA'        => 'permit_empty|in_list[S,M,L,XL,XM,No aplica]', // Asegúrate de que coincida con tu ENUM
-        'LOTE'         => 'permit_empty|max_length[15]',
+        'LOTE'         => 'permit_empty|max_length[15]', // Coincide con el controlador y DB
         'CANTIDAD'     => 'required|integer|greater_than_equal_to[0]',
         'PRECIO'       => 'required|decimal|greater_than[0]',
-        'CATEGORIA'    => 'required|max_length[50]',
-        'SUBCATEGORIA' => 'required|max_length[70]',
+        'CATEGORIA'    => 'required|max_length[50]', // Coincide con el controlador y DB
+        'SUBCATEGORIA' => 'required|max_length[70]', // Coincide con el controlador y DB
         'ID_USUARIO'   => 'required|integer'
     ];
 
@@ -64,18 +66,21 @@ class ProductModel extends Model
             'required'   => 'La marca es obligatoria.',
             'max_length' => 'La marca no puede exceder los 15 caracteres.'
         ],
+        'IMAGEN' => [
+            'max_length' => 'La ruta de la imagen es demasiado larga.' // Nuevo mensaje para la imagen
+        ],
         'TALLA' => [
             'in_list'    => 'La talla seleccionada no es válida.'
         ],
         'CANTIDAD' => [
-            'required'             => 'La cantidad es obligatoria.',
-            'integer'              => 'La cantidad debe ser un número entero.',
+            'required'              => 'La cantidad es obligatoria.',
+            'integer'               => 'La cantidad debe ser un número entero.',
             'greater_than_equal_to' => 'La cantidad no puede ser negativa.'
         ],
         'PRECIO' => [
-            'required'        => 'El precio de venta es obligatorio.',
-            'decimal'         => 'El precio debe ser un número decimal.',
-            'greater_than'    => 'El precio debe ser mayor que cero.'
+            'required'         => 'El precio de venta es obligatorio.',
+            'decimal'          => 'El precio debe ser un número decimal.',
+            'greater_than'     => 'El precio debe ser mayor que cero.'
         ],
         'CATEGORIA' => [
             'required'   => 'La categoría es obligatoria.',
@@ -85,7 +90,7 @@ class ProductModel extends Model
             'required'   => 'La subcategoría es obligatoria.',
             'max_length' => 'La subcategoría no puede exceder los 70 caracteres.'
         ],
-        'ID_USUARIO' => [ // ¡CAMBIO CLAVE AQUÍ!
+        'ID_USUARIO' => [ 
             'required' => 'El ID del usuario (vendedor) es obligatorio.',
             'integer'  => 'El ID del usuario (vendedor) debe ser un número entero.'
         ]

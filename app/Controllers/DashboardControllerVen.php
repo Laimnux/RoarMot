@@ -87,13 +87,15 @@ class DashboardControllerVen extends BaseController
     }
 
 
-    // --- NUEVO MÉTODO PARA PROCESAR EL FORMULARIO DE AGREGAR PRODUCTO ---
+    // --- MÉTODO PARA PROCESAR EL FORMULARIO DE AGREGAR PRODUCTO ---
     public function addProductProcess()
     {
+        // 1. Verificación de autenticación y rol
         if (!$this->session->get('isLoggedIn') || $this->session->get('ROL_ID_ROL') != 2) {
             return redirect()->to(base_url('iniciarSesion'))->with('error_message', 'Acceso no autorizado.');
         }
 
+        // 2. Reglas de validación para los datos del formulario (antes de la subida de archivos)
         $validationRules = [
             'nombre'       => 'required|max_length[45]',
             'marca'        => 'required|max_length[15]',
@@ -104,18 +106,19 @@ class DashboardControllerVen extends BaseController
             'imagen'       => 'uploaded[imagen]|max_size[imagen,2048]|ext_in[imagen,jpg,jpeg,png,gif]',
         ];
 
+        // 3. Mensajes de error personalizados para la validación del formulario
         $validationMessages = [
             'nombre' => ['required' => 'El nombre del producto es obligatorio.'],
             'marca'  => ['required' => 'La marca es obligatoria.'],
             'cantidad' => [
-                'required'             => 'La cantidad es obligatoria.',
-                'integer'              => 'La cantidad debe ser un número entero.',
+                'required'              => 'La cantidad es obligatoria.',
+                'integer'               => 'La cantidad debe ser un número entero.',
                 'greater_than_equal_to' => 'La cantidad no puede ser negativa.'
             ],
             'precio_venta' => [
-                'required'        => 'El precio de venta es obligatorio.',
-                'numeric'         => 'El precio de venta debe ser un número.',
-                'greater_than'    => 'El precio de venta debe ser mayor que cero.'
+                'required'         => 'El precio de venta es obligatorio.',
+                'numeric'          => 'El precio de venta debe ser un número.',
+                'greater_than'     => 'El precio de venta debe ser mayor que cero.'
             ],
             'categoria' => ['required' => 'La categoría es obligatoria.'],
             'subcategoria' => ['required' => 'La subcategoría es obligatoria.'],
@@ -126,10 +129,13 @@ class DashboardControllerVen extends BaseController
             ]
         ];
 
+        // 4. Ejecutar validación del formulario
         if (!$this->validate($validationRules, $validationMessages)) {
+            // Si la validación del controlador falla, devuelve los errores específicos
             return redirect()->back()->withInput()->with('error', $this->validator->getErrors());
         }
 
+        // 5. Procesar la subida de archivos de imagen
         $files = $this->request->getFiles();
         $imageNames = []; 
 
@@ -139,18 +145,22 @@ class DashboardControllerVen extends BaseController
                     $newName = $file->getRandomName(); 
                     $uploadPath = ROOTPATH . 'public/uploads/products/'; 
 
+                    // Crear el directorio si no existe
                     if (!is_dir($uploadPath)) {
                         mkdir($uploadPath, 0777, true);
                     }
 
+                    // Mover el archivo subido
                     if ($file->move($uploadPath, $newName)) {
                         $imageNames[] = $newName;
                     } else {
+                        // Error al mover el archivo
                         log_message('error', 'Error al mover el archivo de imagen: ' . $file->getErrorString());
                         session()->setFlashdata('error', 'Error al subir una de las imágenes: ' . $file->getErrorString());
                         return redirect()->back()->withInput();
                     }
                 } else {
+                    // Archivo no válido o ya movido
                     log_message('error', 'Archivo de imagen no válido o ya movido: ' . $file->getErrorString());
                     session()->setFlashdata('error', 'Una de las imágenes no es válida o ya fue procesada.');
                     return redirect()->back()->withInput();
@@ -158,37 +168,50 @@ class DashboardControllerVen extends BaseController
             }
         }
 
+        // 6. Preparar los datos del producto para la inserción
         $productData = [
             'NOMBRE'       => $this->request->getPost('nombre'),
             'DESCRIPCION'  => $this->request->getPost('descripcion'),
             'MARCA'        => $this->request->getPost('marca'),
-            'IMAGEN'       => implode(',', $imageNames), 
-            'TALLA'        => $this->request->getPost('talla') ?: 'No aplica', 
+            'IMAGEN'       => implode(',', $imageNames), // Guardar los nombres de las imágenes separados por comas
+            'TALLA'        => $this->request->getPost('talla') ?: 'No aplica', // Si no hay talla, usa 'No aplica'
             'LOTE'         => $this->request->getPost('lote'),
             'CANTIDAD'     => $this->request->getPost('cantidad'),
             'PRECIO'       => $this->request->getPost('precio_venta'),
             'CATEGORIA'    => $this->request->getPost('categoria'),
             'SUBCATEGORIA' => $this->request->getPost('subcategoria'),
-            'ID_USUARIO'   => $this->session->get('ID_USUARIO'),
+            'ID_USUARIO'   => $this->session->get('ID_USUARIO'), // Obtener el ID del usuario de la sesión
         ];
 
+        // 7. Intentar insertar el producto en la base de datos
         try {
             if ($this->productModel->insert($productData)) {
-                // si estabien y se validó en producto
                 session()->setFlashdata('success', 'Producto guardado correctamente.');
-                return redirect()->to(base_url('panel/editarProduct')); // lo retornamos a la misma pagina editar prodctos
+                // Redirige a la vista de edición de productos para ver el nuevo producto
+                return redirect()->to(base_url('panel/editarProduct')); 
             } else {
-                // --- CORRECCIÓN CLAVE AQUÍ: Acceder a errors() en minúscula ---
-                log_message('error', 'Error al insertar producto en DB: ' . json_encode($this->productModel->errors()));
-                session()->setFlashdata('error', 'Error al guardar el producto en la base de datos.');
+                // Si la inserción falla, intenta obtener errores específicos del modelo
+                $modelErrors = $this->productModel->errors();
+                $errorMessage = 'Error al guardar el producto en la base de datos.';
+                if (!empty($modelErrors)) {
+                    // Si hay errores específicos del modelo, los añade al mensaje
+                    $errorMessage .= ' Detalles: ' . implode(', ', $modelErrors);
+                    log_message('error', 'Error al insertar producto en DB (errores del modelo): ' . json_encode($modelErrors));
+                } else {
+                    // Si no hay errores específicos del modelo, loguea los datos que intentó insertar
+                    log_message('error', 'Error al insertar producto en DB (sin errores específicos del modelo). Datos: ' . json_encode($productData));
+                }
+                session()->setFlashdata('error', $errorMessage);
                 return redirect()->back()->withInput();
             }
         } catch (\Exception $e) {
+            // Captura cualquier excepción inesperada durante la inserción
             log_message('error', 'Excepción al guardar producto: ' . $e->getMessage());
-            session()->setFlashdata('error', 'Ocurrió un error inesperado al guardar el producto.');
+            session()->setFlashdata('error', 'Ocurrió un error inesperado al guardar el producto: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
     }
+
 
     // Proceso para Editar un producto vista
     public function editProduct()
