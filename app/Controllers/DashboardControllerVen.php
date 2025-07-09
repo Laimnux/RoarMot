@@ -68,7 +68,6 @@ class DashboardControllerVen extends BaseController
     }
 
     // Añadir producto vista
-
     public function addProduct()
     {
         if (!$this->session->get('isLoggedIn') || $this->session->get('ROL_ID_ROL') != 2) {

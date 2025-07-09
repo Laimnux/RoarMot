@@ -47,7 +47,7 @@ class ProductModel extends Model
         'DESCRIPCION'  => 'permit_empty', // La descripción puede estar vacía
         'MARCA'        => 'required|max_length[15]', // Coincide con controlador y DB
         'IMAGEN'       => 'permit_empty|max_length[1000]', // <-- AJUSTADO: max_length para el nombre de archivo/ruta. 
-        'TALLA'        => 'permit_empty|in_list[S,M,L,XL,XM,No aplica]', // Asegúrate de que coincida con tu ENUM
+        'TALLA'        => 'permit_empty|in_list[S,M,L,XL,XS,No aplica]', // Asegúrate de que coincida con tu ENUM
         'LOTE'         => 'permit_empty|max_length[15]', // Coincide con el controlador y DB
         'CANTIDAD'     => 'required|integer|greater_than_equal_to[0]',
         'PRECIO'       => 'required|decimal|greater_than[0]',
