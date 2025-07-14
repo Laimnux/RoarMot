@@ -85,6 +85,9 @@ $routes->group('panel', function($routes) {
     $routes->post('editProductProceso', 'DashboardControllerVen::editProductProcess'); 
     $routes->post('deleteProductProceso', 'DashboardControllerVen::deleteProductProcess'); 
 
+    // Descargamos exel
+    $routes->get('descargarExcel', 'DashboardControllerVen::descargarProductosExcel');
+
     //$routes->get('edit-product', 'SellerDashboardController::editProduct');
     //$routes->get('orders', 'SellerDashboardController::orders');
     //$routes->get('profile', 'SellerDashboardController::profile');

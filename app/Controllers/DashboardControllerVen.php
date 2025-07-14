@@ -2,13 +2,14 @@
 
 namespace App\Controllers;
 
-use CodeIgniter\Controller;
 use CodeIgniter\HTTP\CLIRequest;
 use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use App\Models\ProductModel;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class DashboardControllerVen extends BaseController
 {
@@ -173,7 +174,7 @@ class DashboardControllerVen extends BaseController
             'DESCRIPCION'  => $this->request->getPost('descripcion'),
             'MARCA'        => $this->request->getPost('marca'),
             'IMAGEN'       => implode(',', $imageNames), // Guardar los nombres de las imágenes separados por comas
-            'TALLA'        => $this->request->getPost('talla') ?: 'No aplica', // Si no hay talla, usa 'No aplica'
+            'TALLA'        => $this->request->getPost('Talla') ?: 'No aplica', // Si no hay talla, usa 'No aplica'
             'LOTE'         => $this->request->getPost('lote'),
             'CANTIDAD'     => $this->request->getPost('cantidad'),
             'PRECIO'       => $this->request->getPost('precio_venta'),
@@ -313,6 +314,7 @@ class DashboardControllerVen extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Ocurrió un error inesperado al actualizar el producto.']);
         }
     }
+    
 
     // --- MÉTODO PARA PROCESAR LA ELIMINACIÓN DE PRODUCTOS ---
     public function deleteProductProcess()
@@ -364,4 +366,83 @@ class DashboardControllerVen extends BaseController
         // 6. Redirigir de vuelta a la página de edición de productos
         return redirect()->to(base_url('panel/editarProduct'));
     }
+
+     // --- MÉTODO PARA DESCARGAR PRODUCTOS DEL VENDEDOR EN EXCEL ---
+    public function descargarProductosExcel()
+    {
+        // Verificación de autenticación y rol
+        if (!$this->session->get('isLoggedIn') || $this->session->get('ROL_ID_ROL') != 2) {
+            return redirect()->to(base_url('iniciarSesion'))->with('error', 'Acceso no autorizado');
+        }
+
+        $id_usuario_logueado = $this->session->get('ID_USUARIO');
+        $productos = $this->productModel
+                        ->where('ID_USUARIO', $id_usuario_logueado)
+                        ->findAll();
+
+        if (empty($productos)) {
+            return redirect()->back()->with('info', 'No tienes productos registrados');
+        }
+
+        try {
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Mis Productos');
+
+            // Cabeceras
+            $sheet->setCellValue('A1', 'ID');
+            $sheet->setCellValue('B1', 'Nombre');
+            $sheet->setCellValue('C1','Marca');
+            $sheet->setCellValue('D1', 'Cantidad');
+            $sheet->setCellValue('E1', 'Precio');
+            $sheet->setCellValue('F1', 'Descripción');
+            $sheet->setCellValue('G1', 'Talla');
+            $sheet->setCellValue('H1', 'Lote');
+            $sheet->setCellValue('I1', 'Categoría');
+            $sheet->setCellValue('J1', 'Subcategoría');
+            // ... (resto de cabeceras)
+
+            // Datos
+            $row = 2;
+            foreach ($productos as $producto) {
+                $sheet->setCellValue('A'.$row, $producto['ID']);
+                $sheet->setCellValue('B'.$row, $producto['NOMBRE']);
+                $sheet->setCellValue('C'.$row, $producto['MARCA']);
+                $sheet->setCellValue('D' . $row, $producto['CANTIDAD']); // Añadir Cantidad
+                $sheet->setCellValue('E' . $row, $producto['PRECIO']); // Añadir Precio
+                $sheet->setCellValue('F' . $row, $producto['DESCRIPCION']); // Añadir Descripción
+                $sheet->setCellValue('G' . $row, $producto['TALLA']); // Añadir Talla
+                $sheet->setCellValue('H' . $row, $producto['LOTE']); // Añadir Lote
+                $sheet->setCellValue('I' . $row, $producto['CATEGORIA']); // Añadir Categoría
+                $sheet->setCellValue('J' . $row, $producto['SUBCATEGORIA']); // Añadir Subcategoría
+                // ... (resto de datos)
+                $row++;
+            }
+
+            // Autoajustar columnas
+            foreach (range('A', $sheet->getHighestColumn()) as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+
+            $writer = new Xlsx($spreadsheet);
+            $fileName = 'mis_productos_'.date('Ymd_His').'.xlsx';
+
+            // Limpiar buffers
+            if (ob_get_contents()) {
+                ob_end_clean();
+            }
+
+            // Configurar respuesta
+            return $this->response
+                ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                ->setHeader('Content-Disposition', 'attachment;filename="'.$fileName.'"')
+                ->setHeader('Cache-Control', 'max-age=0')
+                ->setBody($writer->save('php://output'));
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error al generar Excel: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Error al generar el archivo');
+        }
+    }
+
 }

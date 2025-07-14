@@ -5,9 +5,9 @@
     <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-6">Editar o eliminar productos</h1>
 
     <?php if (session()->getFlashdata('success')): ?>
-        <div class="bg-green-100 text-green-700 px-4 py-2 sm:px-6 sm:py-3 mb-4 border border-green-400 rounded text-sm sm:text-base">✅ <?= session()->getFlashdata('success') ?></div>
+        <div class="bg-green-100 text-green-700 px-4 py-2 sm:px-6 sm:py-3 mb-4 border border-green-400 rounded text-sm sm:text-base"><?= session()->getFlashdata('success') ?></div>
     <?php elseif (session()->getFlashdata('error')): ?>
-        <div class="bg-red-100 text-red-700 px-4 py-2 sm:px-6 sm:py-3 mb-4 border border-red-400 rounded text-sm sm:text-base">❌ <?= session()->getFlashdata('error') ?></div>
+        <div class="bg-red-100 text-red-700 px-4 py-2 sm:px-6 sm:py-3 mb-4 border border-red-400 rounded text-sm sm:text-base"><?= session()->getFlashdata('error') ?></div>
     <?php endif; ?>
 
     <div class="overflow-x-auto bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow">
@@ -60,6 +60,17 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="mb-6">
+        <h2 class="text-lg font-semibold text-gray-700 mb-3">Descargar productos agregados a Excel</h2>
+        <a href="<?=base_url('panel/descargarExcel');?>" 
+            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md inline-flex items-center transition-colors duration-200">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Descargar Excel
+        </a>
     </div>
 
     <script>

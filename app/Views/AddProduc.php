@@ -40,12 +40,12 @@
                 <input type="text" name="nombre" placeholder="Nombre del producto *" required class="p-2 sm:p-3 border rounded border-gray-300 focus:ring-2 focus:ring-pink-600 text-gray-800 text-sm sm:text-base">
                 <input type="text" name="marca" placeholder="Marca *" required class="p-2 sm:p-3 border rounded border-gray-300 focus:ring-2 focus:ring-pink-600 text-gray-800 text-sm sm:text-base">
                 <select name="Talla" required class="p-2 sm:p-3 border rounded border-gray-300 focus:ring-2 focus:ring-pink-600 text-gray-800 text-sm sm:text-base">
-                    <option value="casco">S</option>
-                    <option value="guantes">M</option>
-                    <option value="chaquetas">L</option>
-                    <option value="chaquetas">XL</option>
-                    <option value="chaquetas">XS</option>
-                    <option value="chaquetas">No aplica</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="XS">XS</option>
+                    <option value="No aplica">No aplica</option>
                 </select>
                 <input type="number" name="cantidad" placeholder="Cantidad *" required class="p-2 sm:p-3 border rounded border-gray-300 focus:ring-2 focus:ring-pink-600 text-gray-800 text-sm sm:text-base">
                 <input type="text" name="lote" placeholder="Lote" class="p-2 sm:p-3 border rounded border-gray-300 focus:ring-2 focus:ring-pink-600 text-gray-800 text-sm sm:text-base">
